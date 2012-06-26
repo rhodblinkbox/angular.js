@@ -31,8 +31,8 @@ describe('angular.scenario.output.html', function() {
   it('should create nested describe context', function() {
     runner.emit('SpecBegin', spec);
     expect(context.find('#describe-20 #describe-10 > h2').text()).
-      toEqual('describe: child');
-    expect(context.find('#describe-20 > h2').text()).toEqual('describe: parent');
+      toEqual('child');
+    expect(context.find('#describe-20 > h2').text()).toEqual('parent');
     expect(context.find('#describe-10 .tests > li .test-info .test-name').text()).
       toEqual('test spec');
     expect(context.find('#describe-10 .tests > li').hasClass('status-pending')).

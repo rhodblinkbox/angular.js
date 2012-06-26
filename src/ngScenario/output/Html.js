@@ -133,11 +133,20 @@ angular.scenario.output('html', function(context, runner, model) {
         currentContext.find('> .test-children').append(
           '<div class="test-describe" id="' + id + '">' +
           '  <h2></h2>' +
+		  '  <div class="description" style="display: none;"></div>' +
           '  <div class="test-children"></div>' +
           '  <ul class="tests"></ul>' +
           '</div>'
         );
-        context.find('#' + id).find('> h2').text('describe: ' + defn.name);
+        context.find('#' + id).find('> h2').text(defn.name);
+		
+		// Add the description if it exists
+		if(!!defn.description)
+        {
+            var $description = context.find('#' + id).find('> .description');
+            $description.text(defn.description);
+            $description.show();
+        }
       }
       currentContext = context.find('#' + id);
     });

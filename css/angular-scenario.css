@@ -195,6 +195,12 @@ body {
   background-color: #efefef;
 }
 
+#specs .description {
+	background-color: #EFEFEF; 
+	padding-left: 20px; 
+	font-style: italic;
+}
+
 #application {
   border: 1px solid #BABAD1;
 }

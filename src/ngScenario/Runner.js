@@ -12,14 +12,18 @@ angular.scenario.Runner = function($window) {
   this.rootDescribe = new angular.scenario.Describe();
   this.currentDescribe = this.rootDescribe;
   this.api = {
-    it: this.it,
+    it: this.it,	
     iit: this.iit,
     xit: angular.noop,
     describe: this.describe,
     ddescribe: this.ddescribe,
     xdescribe: angular.noop,
     beforeEach: this.beforeEach,
-    afterEach: this.afterEach
+    afterEach: this.afterEach,
+
+    featureStart: this.describeStart,
+    scenarioStart: this.describeStart,
+    stepStart: this.it
   };
   angular.forEach(this.api, angular.bind(this, function(fn, key) {
     this.$window[key] = angular.bind(this, fn);
@@ -74,6 +78,27 @@ angular.scenario.Runner.prototype.describe = function(name, body) {
       self.currentDescribe = parentDescribe;
     }
   });
+};
+
+/**
+ * Defines a describe block of a spec, but allows the body to callback when the describe has been processed.
+ *
+ * @see Describe.js
+ *
+ * @param {string} name Name of the block
+ * @param {function()} body Body of the block
+ * @param {string} description Description of the block
+ */
+angular.scenario.Runner.prototype.describeStart = function(name, body, description) {
+  var self = this;
+  this.currentDescribe.describe(name, function() {
+    var parentDescribe = self.currentDescribe;
+    var endDescribeCallback = function() {self.currentDescribe = parentDescribe;};
+	
+	self.currentDescribe = this;	
+	body.call(this, endDescribeCallback);    
+  }, 
+  description);
 };
 
 /**

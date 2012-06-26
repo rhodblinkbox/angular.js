@@ -6,14 +6,16 @@
  *
  * @param {string} descName Name of the block
  * @param {Object} parent describe or undefined if the root.
+ * @param {string} descDescription Description of the block
  */
-angular.scenario.Describe = function(descName, parent) {
+angular.scenario.Describe = function(descName, parent, descDescription) {
   this.only = parent && parent.only;
   this.beforeEachFns = [];
   this.afterEachFns = [];
   this.its = [];
   this.children = [];
   this.name = descName;
+  this.description = descDescription;
   this.parent = parent;
   this.id = angular.scenario.Describe.id++;
 
@@ -65,9 +67,10 @@ angular.scenario.Describe.prototype.afterEach = function(body) {
  *
  * @param {string} name Name of the block. Appended to the parent block's name.
  * @param {function()} body Body of the block.
+ * @param {string} description Description of the block. Appended to the parent block's name.
  */
-angular.scenario.Describe.prototype.describe = function(name, body) {
-  var child = new angular.scenario.Describe(name, this);
+angular.scenario.Describe.prototype.describe = function(name, body, description) {
+  var child = new angular.scenario.Describe(name, this, description);
   this.children.push(child);
   body.call(child);
 };
