@@ -11,6 +11,7 @@
 function setupModuleLoader(window) {
 
   function ensure(obj, name, factory) {
+    // return module if already exists, otherwise run module factory method below...
     return obj[name] || (obj[name] = factory());
   }
 
@@ -238,9 +239,10 @@ function setupModuleLoader(window) {
          */
         function invokeLater(provider, method, insertMethod) {
           return function() {
+            // place service registrations onto the invoke queue. 
             invokeQueue[insertMethod || 'push']([provider, method, arguments]);
             return moduleInstance;
-          }
+          };
         }
       });
     };

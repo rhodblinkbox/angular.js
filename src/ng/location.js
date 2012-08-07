@@ -505,8 +505,8 @@ function $LocationProvider(){
     }
   };
 
-  this.$get = ['$rootScope', '$browser', '$sniffer', '$rootElement',
-      function( $rootScope,   $browser,   $sniffer,   $rootElement) {
+  this.$get = ['$rootScope', '$browser', '$sniffer', '$rootElement', '$log',
+      function( $rootScope,   $browser,   $sniffer,   $rootElement, $log) {
     var $location,
         basePath,
         pathPrefix,
@@ -578,6 +578,7 @@ function $LocationProvider(){
 
     // update $location when $browser url changes
     $browser.onUrlChange(function(newUrl) {
+      $log.log('$LocationProvider browser url changed');
       if ($location.absUrl() != newUrl) {
         $rootScope.$evalAsync(function() {
           var oldUrl = $location.absUrl();
@@ -591,11 +592,13 @@ function $LocationProvider(){
 
     // update browser
     var changeCounter = 0;
-    $rootScope.$watch(function $locationWatch() {
+    $rootScope.$watch(function $locationWatch(scope) {
       var oldUrl = $browser.url();
 
       if (!changeCounter || oldUrl != $location.absUrl()) {
         changeCounter++;
+        $log.log('$LocationProvider watch detected a url change ' + oldUrl + ' -> ' + $location.absUrl() + ' on scope ' + scope.$id);
+        
         $rootScope.$evalAsync(function() {
           if ($rootScope.$broadcast('$locationChangeStart', $location.absUrl(), oldUrl).
               defaultPrevented) {

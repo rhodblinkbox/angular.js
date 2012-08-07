@@ -411,16 +411,18 @@ function createInjector(modulesToLoad) {
           }
       },
       providerInjector = createInternalInjector(providerCache, function() {
+        // Provider has not been registered
         throw Error("Unknown provider: " + path.join(' <- '));
       }),
       instanceCache = {},
       instanceInjector = (instanceCache.$injector =
           createInternalInjector(instanceCache, function(servicename) {
+            // If instance is not found in the instance cache, get a provider from the providerCache and use it to create the instance.
             var provider = providerInjector.get(servicename + providerSuffix);
             return instanceInjector.invoke(provider.$get, provider);
           }));
 
-
+  // Load modules and run any runblocks they specify
   forEach(loadModules(modulesToLoad), function(fn) { instanceInjector.invoke(fn || noop); });
 
   return instanceInjector;
@@ -487,6 +489,7 @@ function createInjector(modulesToLoad) {
         runBlocks = runBlocks.concat(loadModules(moduleFn.requires)).concat(moduleFn._runBlocks);
 
         try {
+          // run the module's invokeQueue; any configuration calls (registering services etc)
           for(var invokeQueue = moduleFn._invokeQueue, i = 0, ii = invokeQueue.length; i < ii; i++) {
             var invokeArgs = invokeQueue[i],
                 provider = invokeArgs[0] == '$injector'

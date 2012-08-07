@@ -20,6 +20,7 @@ function $SnifferProvider() {
     return {
       // Android has history.pushState, but it does not update location correctly
       // so let's not use the history API at all.
+      // Note other devices such as LG and Tecknika Avtrex experience the same problem.
       // http://code.google.com/p/android/issues/detail?id=17471
       // https://github.com/angular/angular.js/issues/904
       history: !!($window.history && $window.history.pushState && !(android < 4)),

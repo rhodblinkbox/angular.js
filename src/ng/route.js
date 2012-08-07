@@ -103,8 +103,8 @@ function $RouteProvider(){
   };
 
 
-  this.$get = ['$rootScope', '$location', '$routeParams', '$q', '$injector', '$http', '$templateCache',
-      function( $rootScope,   $location,   $routeParams,   $q,   $injector,   $http,   $templateCache) {
+  this.$get = ['$rootScope', '$location', '$routeParams', '$q', '$injector', '$http', '$templateCache', '$log',
+      function( $rootScope,   $location,   $routeParams,   $q,   $injector,   $http,   $templateCache, $log) {
 
     /**
      * @ngdoc object
@@ -303,6 +303,7 @@ function $RouteProvider(){
            * creates new scope, reinstantiates the controller.
            */
           reload: function() {
+            $log.log('$RouteProvider.reload()');
             forceReload = true;
             $rootScope.$evalAsync(updateRoute);
           }
@@ -344,10 +345,14 @@ function $RouteProvider(){
 
       if (next && last && next.$route === last.$route
           && equals(next.pathParams, last.pathParams) && !next.reloadOnSearch && !forceReload) {
+        // Not changing route
         last.params = next.params;
         copy(last.params, $routeParams);
         $rootScope.$broadcast('$routeUpdate', last);
       } else if (next || last) {
+        // Url change matches new route
+        $log.log('$RouteProvider.updateRoute() routeChangeStart');
+          
         forceReload = false;
         $rootScope.$broadcast('$routeChangeStart', next, last);
         $route.current = next;
@@ -371,19 +376,27 @@ function $RouteProvider(){
                   template;
 
               forEach(next.resolve || {}, function(value, key) {
+                // key is a function which returns a promise. Gets all promises defined in the route.resolve property and adds them to values[].
                 keys.push(key);
                 values.push(isFunction(value) ? $injector.invoke(value) : $injector.get(value));
               });
               if (isDefined(template = next.template)) {
+                // Already loaded the template html
               } else if (isDefined(template = next.templateUrl)) {
-                template = $http.get(template, {cache: $templateCache}).
-                    then(function(response) { return response.data; });
+                // Need to load the template html - create template variable which is eventually fulfilled by the $http.get promise
+                template = $http.get(template, {cache: $templateCache}).then(function(response) {
+                  $log.log('$RouteProvider.updateRoute() loaded template ' + template);
+                  return response.data;
+                });
               }
               if (isDefined(template)) {
                 keys.push('$template');
                 values.push(template);
               }
               return $q.all(values).then(function(values) {
+                $log.log('$RouteProvider.updateRoute() resolved all route promises');
+
+                // All route promises have resolved, assign all returned promise values to locals to be used by injector.
                 var locals = {};
                 forEach(values, function(value, index) {
                   locals[keys[index]] = value;
@@ -394,15 +407,18 @@ function $RouteProvider(){
           }).
           // after route change
           then(function(locals) {
+            // After route change
             if (next == $route.current) {
               if (next) {
                 next.locals = locals;
                 copy(next.params, $routeParams);
               }
+              $log.log('$RouteProvider.updateRoute() raise $routeChangeSuccess');
               $rootScope.$broadcast('$routeChangeSuccess', next, last);
             }
           }, function(error) {
             if (next == $route.current) {
+              $log.log('$RouteProvider.updateRoute() raise $routeChangeError');
               $rootScope.$broadcast('$routeChangeError', next, last, error);
             }
           });

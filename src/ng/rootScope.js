@@ -68,8 +68,8 @@ function $RootScopeProvider(){
     return TTL;
   };
 
-  this.$get = ['$injector', '$exceptionHandler', '$parse',
-      function( $injector,   $exceptionHandler,   $parse) {
+  this.$get = ['$injector', '$exceptionHandler', '$parse', '$log',
+      function( $injector,   $exceptionHandler,   $parse, $log) {
 
     /**
      * @ngdoc function
@@ -369,6 +369,7 @@ function $RootScopeProvider(){
             watchLog = [],
             logIdx, logMsg;
 
+        $log.log('Scope[' + target.$id + '].$digest()');
         beginPhase('$digest');
 
         do {
