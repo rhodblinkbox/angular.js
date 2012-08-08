@@ -81,27 +81,43 @@ angular.scenario.Application.prototype.navigateTo = function(url, loadFn, errorF
  * @param {function()} action The callback to execute. function($window, $document)
  *  $document is a jQuery wrapped document.
  */
-angular.scenario.Application.prototype.executeAction = function(action) {
-  var self = this;
-  var $window = this.getWindow_();
-  if (!$window.document) {
-    throw 'Sandbox Error: Application document not accessible.';
-  }
-  if (!$window.angular) {
-    return action.call(this, $window, _jQuery($window.document));
-  }
-  angularInit($window.document, function(element) {
-    var $injector = $window.angular.element(element).injector();
-    var $element = _jQuery(element);
+angular.scenario.Application.prototype.executeAction = function(action)
+{
+	var self = this;
+	var $window = this.getWindow_();
+	if (!$window.document) {
+		throw 'Sandbox Error: Application document not accessible.';
+	}
 
-    $element.injector = function() {
-      return $injector;
-    };
+	if (!$window.angular) {
+		return action.call(this, $window, _jQuery($window.document));
+	}
 
-    $injector.invoke(function($browser){
-      $browser.notifyWhenNoOutstandingRequests(function() {
-        action.call(self, $window, $element);
-      });
-    });
-  });
+	var initialisedWithNgAppDirective = false;
+	
+	// angularInit calls this function only if ng-app directive is detected
+	var initFn = function(element) {
+		initialisedWithNgAppDirective = true;
+		
+		var $injector = $window.angular.element(element).injector();
+		var $element = _jQuery(element);
+
+		$element.injector = function() {
+			return $injector;
+		};
+
+		$injector.invoke(function($browser) {
+			$browser.notifyWhenNoOutstandingRequests(function() {
+				action.call(self, $window, $element);
+			});
+		});
+	};
+
+	// original implementation searches for ng-app and attaches to angular if found
+	angularInit($window.document, initFn);
+
+	if (!initialisedWithNgAppDirective) {
+		// ng-app not found so manually attaching to the root of document
+		initFn($window.document);
+	}
 };
