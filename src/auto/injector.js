@@ -549,41 +549,107 @@ function createInjector(modulesToLoad) {
       }
     }
 
-    function invoke(fn, self, locals){
-      var args = [],
-          $inject = annotate(fn),
-          length, i,
-          key;
+    function invoke(fn, self, locals)
+    {
+        var args = [],
+            $inject = annotate(fn),
+            length, i,
+            key,
+            $q;
 
-      for(i = 0, length = $inject.length; i < length; i++) {
-        key = $inject[i];
-        args.push(
-          locals && locals.hasOwnProperty(key)
-          ? locals[key]
-          : getService(key, path)
-        );
-      }
-      if (!fn.$inject) {
-        // this means that we must be an array.
-        fn = fn[length];
-      }
+        function getParameters()
+        {
+            // Get a list of promises and wait for them all to resolve...
+            for (i = 0, length = $inject.length; i < length; i++)
+            {
+                key = $inject[i];
+                args.push(
+                    locals && locals.hasOwnProperty(key)
+                        ? locals[key]
+                        : getService(key, path)
+                );
+            }
+            if (!fn.$inject)
+            {
+                // this means that we must be an array.
+                fn = fn[length];
+            }
+        }
+
+        function getParametersDeferred()
+        {
+            // Get a list of promises and wait for them all to resolve...
+            for (i = 0, length = $inject.length; i < length; i++)
+            {
+                var promise;
+                key = $inject[i];
+                var parameter = locals && locals.hasOwnProperty(key)
+                    ? locals[key]
+                    : getService(key, path);
+
+                if (parameter.then)
+                {
+                    args.push(parameter);
+                }
+                // convert to a promise if its not one already
+                // TODO: ensure its automatically resolved if its not a  promise. 
+                args.push(parameter.then ? parameter : $q.when(parameter));
+            }
+            if (!fn.$inject)
+            {
+                // this means that we must be an array.
+                fn = fn[length];
+            }
+        }
+        
+        function resolveArgs(callback)
+        {
+            // check for $q etc..
+            
+            $q.all(args).then(function(resolvedArgs) {
+                args = resolvedArgs;
+                callback();
+            });
+
+        }
 
 
-      // Performance optimization: http://jsperf.com/apply-vs-call-vs-invoke
-      switch (self ? -1 : args.length) {
-        case  0: return fn();
-        case  1: return fn(args[0]);
-        case  2: return fn(args[0], args[1]);
-        case  3: return fn(args[0], args[1], args[2]);
-        case  4: return fn(args[0], args[1], args[2], args[3]);
-        case  5: return fn(args[0], args[1], args[2], args[3], args[4]);
-        case  6: return fn(args[0], args[1], args[2], args[3], args[4], args[5]);
-        case  7: return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
-        case  8: return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
-        case  9: return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
-        case 10: return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
-        default: return fn.apply(self, args);
-      }
+        function callFunction()
+        {
+            // ...then run this:
+            // Performance optimization: http://jsperf.com/apply-vs-call-vs-invoke
+            switch (self ? -1 : args.length)
+            {
+                case 0:
+                    return fn();
+                case 1:
+                    return fn(args[0]);
+                case 2:
+                    return fn(args[0], args[1]);
+                case 3:
+                    return fn(args[0], args[1], args[2]);
+                case 4:
+                    return fn(args[0], args[1], args[2], args[3]);
+                case 5:
+                    return fn(args[0], args[1], args[2], args[3], args[4]);
+                case 6:
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5]);
+                case 7:
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+                case 8:
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+                case 9:
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8]);
+                case 10:
+                    return fn(args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
+                default:
+                    return fn.apply(self, args);
+            }
+        }
+
+        getParameters();
+
+        resolveArgs(callFunction);
     }
 
     function instantiate(Type, locals) {

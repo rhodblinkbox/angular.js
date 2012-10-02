@@ -191,6 +191,7 @@ function $CompileProvider($provide) {
       assertArg(directiveFactory, 'directive');
       if (!hasDirectives.hasOwnProperty(name)) {
         hasDirectives[name] = [];
+
         $provide.factory(name + Suffix, ['$injector', '$exceptionHandler',
           function($injector, $exceptionHandler) {
             var directives = [];
@@ -224,9 +225,9 @@ function $CompileProvider($provide) {
 
   this.$get = [
             '$injector', '$interpolate', '$exceptionHandler', '$http', '$templateCache', '$parse',
-            '$controller', '$rootScope',
+            '$controller', '$rootScope', '$log',
     function($injector,   $interpolate,   $exceptionHandler,   $http,   $templateCache,   $parse,
-             $controller,   $rootScope) {
+             $controller,   $rootScope, $log) {
 
     var Attributes = function(element, attr) {
       this.$$element = element;
@@ -374,7 +375,8 @@ function $CompileProvider($provide) {
      var linkFns = [],
          nodeLinkFn, childLinkFn, directives, attrs, linkFnFound;
 
-     for(var i = 0; i < nodeList.length; i++) {
+     for (var i = 0; i < nodeList.length; i++) 
+     {
        attrs = new Attributes();
 
        // we must always refer to nodeList[i] since the nodes can be replaced underneath us.
