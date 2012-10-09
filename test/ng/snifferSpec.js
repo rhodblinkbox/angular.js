@@ -8,8 +8,17 @@ describe('$sniffer', function() {
   }
 
   describe('history', function() {
-    it('should be true if history.pushState defined', function() {
-      expect(sniffer({history: {pushState: noop, replaceState: noop}}).history).toBe(true);
+    it('should be true if history.pushState is defined and it affects location.href', function() {
+      var mockWindow = {
+        document: {title : ''},
+        location: {href: ''},
+        history: {
+          pushState: function(state, title, url){ mockWindow.location.href = url },
+          replaceState: noop
+        }
+      };
+
+      expect(sniffer(mockWindow).history).toBe(true);
     });
 
     it('should be false if history or pushState not defined', function() {
