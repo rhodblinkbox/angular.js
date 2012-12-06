@@ -24,7 +24,7 @@ var version = {
 
 function publishExternalAPI(angular){
   extend(angular, {
-    'bootstrap': bootstrap,
+    'bootstrap': manualBootstrap,
     'copy': copy,
     'extend': extend,
     'equals': equals,

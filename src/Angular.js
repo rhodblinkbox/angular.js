@@ -894,9 +894,135 @@ function angularInit(element, bootstrap) {
       }
     }
   });
+
   if (appElement) {
     bootstrap(appElement, module ? [module] : []);
+
+  } else if(element) {
+    // If we couldn't find the appElement, we expect that someone will do a manual bootstrap later.
+    // When this happens, we'll need to call the bootstrap callback with the appElement and modules.
+    addBootstrapCallback(element, bootstrap);
   }
+}
+
+/**
+ * @ngdoc function
+ * @name isElementList
+ * @description
+ * Check if given element list is jqLite or jQuery list
+ *
+ * @param {Element|Array} elements DOM element.
+ * @returns {boolean} Returns true if jqLite or jQuery list
+ */
+function isElementList(elements){
+	return (elements instanceof jqLite || elements instanceof jQuery);
+}
+
+
+/**
+ * @ngdoc function
+ * @name getDocument
+ * @description
+ * Return document
+ *
+ * @param {Element|Array} element DOM element.
+ * @returns {Element} document
+ */
+function getDocument(element) {
+	if(element.nodeName === document.nodeName){
+		return element;
+	}
+
+	element = isElementList(element)? element[0].ownerDocument : element.ownerDocument;
+
+	if(!element){
+		element = document;
+	}
+
+	return element;
+}
+
+/**
+ * @ngdoc function
+ * @name addBootstrapCallback
+ * @description
+ * Add bootstrap callback for future when app is loaded and bootstrapped manually
+ *
+ * @param {Element|Array} rootElement DOM element.
+ * @param {Function} callback function.
+ */
+function addBootstrapCallback(rootElement, callback) {
+	rootElement = getDocument(rootElement);
+
+	if(!rootElement.bootstrap){
+		rootElement.bootstrap = {
+			done: false,
+			nativeBootStrapCalled: false,
+			callbacks: [],
+			element: null,
+			modules: null,
+            injector: null
+		}
+	}
+
+	if (rootElement.bootstrap.done) {
+		if(callback !== bootstrap){
+			callback(rootElement.bootstrap.element, rootElement.bootstrap.modules);
+		}
+	} else {
+		rootElement.bootstrap.callbacks.push(callback);
+	}
+}
+
+/**
+ * @ngdoc function
+ * @name angular.bootstrap
+ * @description
+ * Use this function to manually start up angular application.
+ *
+ * See: {@link guide/bootstrap Bootstrap}
+ *
+ * @param {Element} appElement DOM element which is the root of angular application.
+ * @param {Array<String|Function>=} modules an array of module declarations. See: {@link angular.module modules}
+ * @returns {AUTO.$injector} Returns the newly created injector for this app.
+ */
+function manualBootstrap(appElement, modules) {
+
+	var rootElement = getDocument(appElement);
+	rootElement.bootstrap = rootElement.bootstrap || {};
+	rootElement.bootstrap.callbacks = rootElement.bootstrap.callbacks || [];
+
+    // check if native bootstrap is already included in callbacks
+	var bootstrapIndex = rootElement.bootstrap.callbacks.indexOf(bootstrap);
+
+    // remove native bootstrap from callbacks if exist
+	if(bootstrapIndex > -1){
+		rootElement.bootstrap.callbacks = rootElement.bootstrap.callbacks.splice(bootstrapIndex, 1);
+	}
+
+    // call bootstrap if not called already or if app element is changed
+    if(!rootElement.bootstrap.nativeBootStrapCalled || rootElement.bootstrap.element !== appElement){
+        rootElement.bootstrap.nativeBootStrapCalled = true;
+        rootElement.bootstrap.injector = bootstrap(appElement, modules);
+    }
+
+    // go through other callbacks
+	var callbacks = rootElement.bootstrap.callbacks,
+		length = callbacks.length;
+
+	while(length > 0){
+		length -= 1;
+		var callback = callbacks[length];
+		if (typeof callback === "function") {
+			callback(appElement, modules);
+		}
+	}
+
+    rootElement.bootstrap.element = appElement;
+    rootElement.bootstrap.modules = modules;
+    rootElement.bootstrap.done = true;
+
+	return rootElement.bootstrap.injector;
 }
 
 /**
