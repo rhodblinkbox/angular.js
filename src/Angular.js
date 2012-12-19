@@ -997,7 +997,7 @@ function manualBootstrap(appElement, modules) {
 
     // remove native bootstrap from callbacks if exist
 	if(bootstrapIndex > -1){
-		rootElement.bootstrap.callbacks = rootElement.bootstrap.callbacks.splice(bootstrapIndex, 1);
+		rootElement.bootstrap.callbacks.splice(bootstrapIndex, 1);
 	}
 
     // call bootstrap if not called already or if app element is changed
